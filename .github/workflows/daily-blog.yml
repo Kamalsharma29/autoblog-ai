@@ -1,0 +1,62 @@
+name: Daily blog draft
+
+on:
+  schedule:
+    # 09:00 Asia/Kolkata (IST, UTC+5:30) is 03:30 UTC.
+    # GitHub cron is always UTC and may start a few minutes late.
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-blog-draft
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate and commit draft
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate today's draft
+        run: npm run generate
+
+      - name: Commit new article files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -- articles
+
+          if git diff --cached --quiet; then
+            echo "No new article files to commit."
+            exit 0
+          fi
+
+          staged="$(git diff --cached --name-only)"
+          echo "Staged files:"
+          echo "$staged"
+
+          if echo "$staged" | grep -qvE '^articles/.+\.md$'; then
+            echo "Refusing to commit because a staged path is not a new Markdown article."
+            exit 1
+          fi
+
+          git commit -m "Add daily technical blog draft"
+          git push

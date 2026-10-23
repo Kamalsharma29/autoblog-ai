@@ -1,0 +1,13 @@
+{
+  "name": "autoblog-ai",
+  "version": "1.0.0",
+  "description": "Daily technical blog draft generator. This version writes Markdown from local templates and can commit new drafts with GitHub Actions.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "generate": "node src/generate.js"
+  }
+}
